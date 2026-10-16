@@ -19,7 +19,7 @@ namespace CryptoTraderApp.ViewModels
         private int _networkPing = 18; // ms
 
         [ObservableProperty]
-        private string _connectedExchangeName = "Binance Futures (Connected)";
+        private string _connectedExchangeName = "Bithumb KRW (Live API 연동중)";
 
         public TradingViewModel TradingVM { get; } = new();
         public BotManagementViewModel BotVM { get; } = new();

@@ -70,12 +70,14 @@ namespace CryptoTraderApp.Models
 
     public class ExchangeApiConfig
     {
-        public string ExchangeName { get; set; } = "Binance";
+        public string ExchangeName { get; set; } = "Bithumb (Spot)";
         public string ApiKey { get; set; } = string.Empty;
         public string SecretKey { get; set; } = string.Empty;
         public string Passphrase { get; set; } = string.Empty;
         public bool IsConnected { get; set; }
         public bool IsTestnet { get; set; } = false;
         public DateTime LastCheckedTime { get; set; }
+        public string StatusText => IsConnected ? "연결됨 (실시간 백데이터 활성)" : (ExchangeName.Contains("Bithumb") ? "공개 API 활성" : "준비 중 (Coming Soon)");
+        public bool IsAvailable => ExchangeName.Contains("Bithumb");
     }
 }

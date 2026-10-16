@@ -24,9 +24,9 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Key24" FontSize="22" Foreground="#F0B90B" Margin="0,0,10,0"/>
-                    <TextBlock Text="거래소 API 키 보안 관리 (Exchange API Settings)" FontSize="18" FontWeight="Bold" Foreground="#EAECEF"/>
+                    <TextBlock Text="거래소 API 연동 및 지원 현황 (Exchange API Status)" FontSize="18" FontWeight="Bold" Foreground="#EAECEF"/>
                 </StackPanel>
-                <TextBlock Text="※ API Key는 오직 로컬 환경에 DPAPI(Data Protection API)로 암호화되어 보관되며, 출금 권한은 반드시 해제된 API Key만을 등록하세요." 
+                <TextBlock Text="※ 현재 빗썸(Bithumb) Developer Open API를 통해 실시간 시세, 호가, 캔들스틱 및 보조지표 백데이터가 연동되어 있습니다. 타 거래소는 지원 준비 중입니다." 
                            FontSize="12" Foreground="#F0B90B" Margin="0,8,0,0"/>
             </StackPanel>
         </Border>
@@ -42,20 +42,20 @@
             <Border Grid.Column="0" Style="{StaticResource TradingCardStyle}" Margin="0,0,16,0" Padding="18">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="새 거래소 API 연동 등록" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,14"/>
+                        <TextBlock Text="거래소 API 설정 및 점검" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,14"/>
 
                         <!-- Exchange Selection -->
                         <TextBlock Text="거래소 선택" FontSize="12" Foreground="#848E9C" Margin="0,0,0,4"/>
                         <ComboBox SelectedValue="{Binding SelectedExchange}" SelectedValuePath="Content" Height="34" FontSize="13" Margin="0,0,0,12">
-                            <ComboBoxItem Content="Binance (선물/현물)" IsSelected="True"/>
-                            <ComboBoxItem Content="Upbit (업비트)"/>
-                            <ComboBoxItem Content="Bithumb (빗썸)"/>
-                            <ComboBoxItem Content="Bybit (바이비트)"/>
-                            <ComboBoxItem Content="OKX"/>
+                            <ComboBoxItem Content="Bithumb (빗썸)" IsSelected="True"/>
+                            <ComboBoxItem Content="Binance (선물/현물) [준비 중]"/>
+                            <ComboBoxItem Content="Upbit (업비트) [준비 중]"/>
+                            <ComboBoxItem Content="Bybit (바이비트) [준비 중]"/>
+                            <ComboBoxItem Content="OKX [준비 중]"/>
                         </ComboBox>
 
                         <!-- API Key -->
-                        <TextBlock Text="Access / API Key" FontSize="12" Foreground="#848E9C" Margin="0,0,0,4"/>
+                        <TextBlock Text="Connect Key / API Key" FontSize="12" Foreground="#848E9C" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding InputApiKey, UpdateSourceTrigger=PropertyChanged}" 
                                  Height="34" FontSize="12" Margin="0,0,0,12" 
                                  Background="#1E2329" Foreground="#EAECEF" BorderBrush="#2B313A"/>
@@ -76,7 +76,7 @@
                                 Background="#0ECB81" Foreground="#FFFFFF" BorderThickness="0">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="18" Margin="0,0,6,0"/>
-                                <TextBlock Text="연결 테스트 및 안전 저장" VerticalAlignment="Center"/>
+                                <TextBlock Text="빗썸 API 상태 확인 및 적용" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
@@ -96,7 +96,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="연동 완료된 거래소 계정 목록" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,14"/>
+                    <TextBlock Grid.Row="0" Text="거래소별 연동 및 지원 현황" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,14"/>
 
                     <ItemsControl Grid.Row="1" ItemsSource="{Binding ApiConfigs}">
                         <ItemsControl.ItemTemplate>
@@ -112,31 +112,94 @@
 
                                         <!-- Status Icon -->
                                         <Border Grid.Column="0" Width="40" Height="40" CornerRadius="6" Background="#121418" VerticalAlignment="Center" Margin="0,0,14,0">
-                                            <ui:SymbolIcon Symbol="Checkmark24" FontSize="20" Foreground="#0ECB81" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <ui:SymbolIcon FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <ui:SymbolIcon.Style>
+                                                    <Style TargetType="ui:SymbolIcon">
+                                                        <Setter Property="Symbol" Value="Clock24"/>
+                                                        <Setter Property="Foreground" Value="#848E9C"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                <Setter Property="Symbol" Value="Checkmark24"/>
+                                                                <Setter Property="Foreground" Value="#0ECB81"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ui:SymbolIcon.Style>
+                                            </ui:SymbolIcon>
                                         </Border>
 
                                         <!-- Details -->
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding ExchangeName}" FontWeight="Bold" FontSize="14" Foreground="#EAECEF" Margin="0,0,10,0"/>
-                                                <Border Background="#16382E" CornerRadius="4" Padding="6,2">
-                                                    <TextBlock Text="정상 연결됨 (Connected)" Foreground="#0ECB81" FontSize="11" FontWeight="SemiBold"/>
+                                                <Border CornerRadius="4" Padding="6,2">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#2B313A"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                    <Setter Property="Background" Value="#16382E"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#848E9C"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#0ECB81"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </Border>
                                             </StackPanel>
-                                            <TextBlock Text="{Binding ApiKey, StringFormat='{}API Key: {0}'}" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
+                                            <TextBlock Text="{Binding ApiKey, StringFormat='{}상태/키: {0}'}" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
                                         </StackPanel>
 
                                         <!-- Ping & Time -->
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,16,0">
-                                            <TextBlock Text="Ping: 22ms" FontSize="12" FontWeight="SemiBold" Foreground="#0ECB81" HorizontalAlignment="Right"/>
-                                            <TextBlock Text="권한: 읽기/매매 (출금제한됨)" FontSize="11" Foreground="#848E9C" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                            <TextBlock FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="서비스 준비 중"/>
+                                                        <Setter Property="Foreground" Value="#848E9C"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                <Setter Property="Text" Value="빗썸 Open API 활성"/>
+                                                                <Setter Property="Foreground" Value="#0ECB81"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="공개 시세/차트/오더북" FontSize="11" Foreground="#848E9C" HorizontalAlignment="Right" Margin="0,2,0,0"/>
                                         </StackPanel>
 
-                                        <!-- Delete Button -->
-                                        <Button Grid.Column="3" Content="연동 해제" Height="30" FontSize="11" Padding="10,0"
-                                                Background="#3B2228" Foreground="#F6465D" BorderBrush="#F6465D"
+                                        <!-- Action Button -->
+                                        <Button Grid.Column="3" Height="30" FontSize="11" Padding="10,0"
                                                 Command="{Binding DataContext.DeleteConfigCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"/>
+                                                CommandParameter="{Binding}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Content" Value="대기"/>
+                                                    <Setter Property="Background" Value="#1E2329"/>
+                                                    <Setter Property="Foreground" Value="#848E9C"/>
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                            <Setter Property="Content" Value="활성 상태"/>
+                                                            <Setter Property="Background" Value="#16382E"/>
+                                                            <Setter Property="Foreground" Value="#0ECB81"/>
+                                                            <Setter Property="IsEnabled" Value="True"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
