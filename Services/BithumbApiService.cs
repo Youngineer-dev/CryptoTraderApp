@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +13,16 @@ using CryptoTraderApp.Models;
 
 namespace CryptoTraderApp.Services
 {
+    public class BithumbAccountBalance
+    {
+        public string Currency { get; set; } = string.Empty;
+        public decimal Balance { get; set; }
+        public decimal Locked { get; set; }
+        public decimal AvgBuyPrice { get; set; }
+        public string UnitCurrency { get; set; } = "KRW";
+        public decimal TotalAmount => Balance + Locked;
+    }
+
     public class BithumbApiService
     {
         private static readonly HttpClient _httpClient = new()
@@ -22,6 +35,145 @@ namespace CryptoTraderApp.Services
         { 
             "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "AVAX", "DOT", "LINK", "ETC" 
         };
+
+        private string _apiKey = string.Empty;
+        private string _secretKey = string.Empty;
+
+        public bool HasValidCredentials => !string.IsNullOrWhiteSpace(_apiKey) && !string.IsNullOrWhiteSpace(_secretKey);
+
+        public BithumbApiService()
+        {
+            LoadLocalCredentials();
+        }
+
+        public void SetCredentials(string apiKey, string secretKey)
+        {
+            _apiKey = apiKey?.Trim() ?? string.Empty;
+            _secretKey = secretKey?.Trim() ?? string.Empty;
+
+            try
+            {
+                var json = JsonSerializer.Serialize(new
+                {
+                    ApiKey = _apiKey,
+                    SecretKey = _secretKey
+                }, new JsonSerializerOptions { WriteIndented = true });
+
+                File.WriteAllText("bithumb_key.json", json);
+            }
+            catch
+            {
+                // Ignore local file write errors
+            }
+        }
+
+        private void LoadLocalCredentials()
+        {
+            try
+            {
+                string[] possiblePaths = 
+                {
+                    "bithumb_key.json",
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bithumb_key.json")
+                };
+
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        string json = File.ReadAllText(path);
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("ApiKey", out var k)) _apiKey = k.GetString() ?? "";
+                        if (doc.RootElement.TryGetProperty("SecretKey", out var s)) _secretKey = s.GetString() ?? "";
+                        if (!string.IsNullOrWhiteSpace(_apiKey)) break;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore read errors
+            }
+        }
+
+        /// <summary>
+        /// 빗썸 V1 API 전체 보유 자산(계좌 잔고)을 조회합니다 (JWT 인증).
+        /// </summary>
+        public async Task<List<BithumbAccountBalance>> GetAccountBalancesAsync(CancellationToken cancellationToken = default)
+        {
+            var list = new List<BithumbAccountBalance>();
+            if (!HasValidCredentials)
+                return list;
+
+            try
+            {
+                string jwtToken = CreateJwtToken(_apiKey, _secretKey);
+                using var request = new HttpRequestMessage(HttpMethod.Get, "/v1/accounts");
+                request.Headers.Add("Authorization", $"Bearer {jwtToken}");
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    return list;
+
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in doc.RootElement.EnumerateArray())
+                    {
+                        string curr = item.TryGetProperty("currency", out var cProp) ? cProp.GetString() ?? "" : "";
+                        decimal bal = ParseDecimal(item, "balance");
+                        decimal locked = ParseDecimal(item, "locked");
+                        decimal avgP = ParseDecimal(item, "avg_buy_price");
+                        string unit = item.TryGetProperty("unit_currency", out var uProp) ? uProp.GetString() ?? "KRW" : "KRW";
+
+                        list.Add(new BithumbAccountBalance
+                        {
+                            Currency = curr,
+                            Balance = bal,
+                            Locked = locked,
+                            AvgBuyPrice = avgP,
+                            UnitCurrency = unit
+                        });
+                    }
+                }
+            }
+            catch
+            {
+                // return what was parsed
+            }
+
+            return list;
+        }
+
+        private static string CreateJwtToken(string accessKey, string secretKey)
+        {
+            string headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
+            string header = Base64UrlEncode(Encoding.UTF8.GetBytes(headerJson));
+
+            string payloadJson = JsonSerializer.Serialize(new
+            {
+                access_key = accessKey,
+                nonce = Guid.NewGuid().ToString(),
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            });
+            string payload = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
+
+            string dataToSign = $"{header}.{payload}";
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+            byte[] signatureBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(dataToSign));
+            string signature = Base64UrlEncode(signatureBytes);
+
+            return $"{dataToSign}.{signature}";
+        }
+
+        private static string Base64UrlEncode(byte[] input)
+        {
+            return Convert.ToBase64String(input)
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_');
+        }
 
         /// <summary>
         /// 빗썸 KRW 마켓 전체/주요 코인 실시간 시세 목록을 조회합니다.

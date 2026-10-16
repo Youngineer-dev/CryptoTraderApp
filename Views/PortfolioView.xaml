@@ -31,31 +31,39 @@
 
                 <!-- Total Balance -->
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="총 보유 평가 자산" FontSize="13" Foreground="#848E9C"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding TotalBalanceUsdt, StringFormat='{}{0:N2}'}" FontSize="28" FontWeight="Bold" Foreground="#EAECEF"/>
-                        <TextBlock Text=" USDT" FontSize="16" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="빗썸 실시간 총 보유 평가 자산" FontSize="13" Foreground="#848E9C"/>
+                        <Border Background="#16382E" CornerRadius="3" Padding="6,2" Margin="8,0,0,0">
+                            <TextBlock Text="Live API 연동" Foreground="#0ECB81" FontSize="10" FontWeight="Bold"/>
+                        </Border>
                     </StackPanel>
-                    <TextBlock Text="≈ 약 66,586,000 KRW" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding TotalBalanceKrw, StringFormat='{}{0:N0}'}" FontSize="28" FontWeight="Bold" Foreground="#EAECEF"/>
+                        <TextBlock Text=" KRW" FontSize="16" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding AccountStatusMessage}" FontSize="12" Foreground="#0ECB81" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <!-- Total PnL -->
+                <!-- Account Status & Holdings Count -->
                 <StackPanel Grid.Column="1">
-                    <TextBlock Text="누적 평가 손익 (PnL)" FontSize="13" Foreground="#848E9C"/>
+                    <TextBlock Text="보유 암호화폐 종류" FontSize="13" Foreground="#848E9C"/>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock Text="+3,420.50" FontSize="28" FontWeight="Bold" Foreground="#0ECB81"/>
-                        <TextBlock Text=" USDT" FontSize="16" Foreground="#0ECB81" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
+                        <TextBlock Text="{Binding Assets.Count}" FontSize="28" FontWeight="Bold" Foreground="#F0B90B"/>
+                        <TextBlock Text=" 개 종목 보유 중" FontSize="16" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
                     </StackPanel>
-                    <TextBlock Text="수익률 +7.62%" FontSize="12" Foreground="#0ECB81" Margin="0,4,0,0"/>
+                    <TextBlock Text="빗썸 지갑 내 실시간 자산 기준" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <!-- Daily Return -->
-                <StackPanel Grid.Column="2">
-                    <TextBlock Text="24시간 수익률" FontSize="13" Foreground="#848E9C"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock Text="+4.25%" FontSize="28" FontWeight="Bold" Foreground="#0ECB81"/>
-                    </StackPanel>
-                    <TextBlock Text="전일 대비 자산 증가 추세" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
+                <!-- Refresh Button & Options -->
+                <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Command="{Binding RefreshAssetsCommand}"
+                            Height="38" Padding="14,0"
+                            Background="#1E2329" Foreground="#EAECEF" BorderBrush="#2B313A">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="빗썸 자산 새로고침" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
@@ -75,7 +83,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="자산 포트폴리오 비중" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="0" Text="자산 포트폴리오 비중 (실보유 코인)" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,12"/>
 
                     <!-- LiveCharts2 PieChart -->
                     <lvc:PieChart Grid.Row="1" 
@@ -94,7 +102,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="보유 자산 상세 목록" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="0" Text="빗썸 실시간 보유 자산 상세 목록" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,12"/>
 
                     <DataGrid Grid.Row="1" 
                               ItemsSource="{Binding Assets}"
@@ -109,7 +117,7 @@
                               HorizontalGridLinesBrush="#2B313A"
                               HeadersVisibility="Column">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="코인" Width="140">
+                            <DataGridTemplateColumn Header="코인/자산" Width="140">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -121,9 +129,9 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="총 보유량" Binding="{Binding Balance, StringFormat='{}{0:F4}'}" Width="110"/>
+                            <DataGridTextColumn Header="총 보유량" Binding="{Binding FormattedBalance}" Width="120"/>
                             <DataGridTextColumn Header="주문 가능 수량" Binding="{Binding Available, StringFormat='{}{0:F4}'}" Width="120"/>
-                            <DataGridTextColumn Header="평가 금액 (USDT)" Binding="{Binding ValueUsdt, StringFormat='{}{0:N2}'}" Width="130"/>
+                            <DataGridTextColumn Header="평가 금액 (KRW)" Binding="{Binding FormattedValueKrw}" Width="140"/>
 
                             <DataGridTemplateColumn Header="포트폴리오 비중" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>

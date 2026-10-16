@@ -25,6 +25,14 @@ x86/
 project.lock.json
 project.assets.json
 
+## Local Secrets & Keys (Never commit to git)
+bithumb_key.json
+*.secret.json
+*secrets*.json
+appsettings.local.json
+secrets/
+*.key
+
 ## OS generated files
 .DS_Store
 Thumbs.db

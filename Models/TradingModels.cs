@@ -64,8 +64,11 @@ namespace CryptoTraderApp.Models
         public decimal Available { get; set; }
         public decimal InOrders { get; set; }
         public decimal ValueUsdt { get; set; }
+        public decimal ValueKrw { get; set; }
         public double AllocationPercentage { get; set; }
         public string IconColor { get; set; } = "#F0B90B";
+        public string FormattedBalance => Balance < 0.001m && Balance > 0 ? $"{Balance:F8}" : $"{Balance:F4}";
+        public string FormattedValueKrw => $"{ValueKrw:N0} KRW";
     }
 
     public class ExchangeApiConfig

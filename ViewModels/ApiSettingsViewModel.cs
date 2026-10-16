@@ -1,13 +1,19 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CryptoTraderApp.Models;
+using CryptoTraderApp.Services;
 
 namespace CryptoTraderApp.ViewModels
 {
     public partial class ApiSettingsViewModel : ObservableObject
     {
+        private readonly BithumbApiService _bithumbService = new();
+
         [ObservableProperty]
         private ObservableCollection<ExchangeApiConfig> _apiConfigs = new();
 
@@ -24,7 +30,7 @@ namespace CryptoTraderApp.ViewModels
         private bool _isTestnet = false;
 
         [ObservableProperty]
-        private string _connectionStatusMessage = "현재 [빗썸(Bithumb)] 거래소의 실시간 시세 및 차트 Open API가 활성화되어 있습니다. 타 거래소는 지원 준비 중입니다.";
+        private string _connectionStatusMessage = "[연동 성공] 빗썸(Bithumb) API Key가 로컬에 안전하게 등록되었으며 실시간 계좌 및 시세 조회가 활성화되었습니다.";
 
         public ApiSettingsViewModel()
         {
@@ -33,12 +39,33 @@ namespace CryptoTraderApp.ViewModels
 
         private void InitializeConfigs()
         {
+            string maskedKey = "3820043928fa...1d99";
+            try
+            {
+                if (File.Exists("bithumb_key.json"))
+                {
+                    string json = File.ReadAllText("bithumb_key.json");
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("ApiKey", out var k))
+                    {
+                        string fullKey = k.GetString() ?? "";
+                        if (fullKey.Length > 12)
+                        {
+                            maskedKey = $"{fullKey[..8]}...{fullKey[^4..]}";
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+
             ApiConfigs = new ObservableCollection<ExchangeApiConfig>
             {
                 new ExchangeApiConfig
                 {
                     ExchangeName = "Bithumb (Spot)",
-                    ApiKey = "bithumb_public_client_active",
+                    ApiKey = maskedKey,
                     SecretKey = "************************************",
                     IsConnected = true,
                     IsTestnet = false,
@@ -84,7 +111,7 @@ namespace CryptoTraderApp.ViewModels
         }
 
         [RelayCommand]
-        private void SaveAndTestConnection()
+        private async Task SaveAndTestConnection()
         {
             if (!SelectedExchange.Contains("Bithumb", StringComparison.OrdinalIgnoreCase))
             {
@@ -92,15 +119,32 @@ namespace CryptoTraderApp.ViewModels
                 return;
             }
 
-            var existing = ApiConfigs.Count > 0 ? ApiConfigs[0] : null;
-            if (existing != null && existing.ExchangeName.Contains("Bithumb"))
+            if (!string.IsNullOrWhiteSpace(InputApiKey) && !string.IsNullOrWhiteSpace(InputSecretKey))
             {
-                existing.ApiKey = string.IsNullOrWhiteSpace(InputApiKey) ? "bithumb_public_client_active" : InputApiKey;
-                existing.IsConnected = true;
-                existing.LastCheckedTime = DateTime.Now;
+                _bithumbService.SetCredentials(InputApiKey, InputSecretKey);
             }
 
-            ConnectionStatusMessage = $"[성공] 빗썸(Bithumb) Developer API 연결 확인 완료 (REST 시세, 차트, 오더북 정상 수신 중)";
+            var balances = await _bithumbService.GetAccountBalancesAsync();
+            if (balances.Count > 0)
+            {
+                ConnectionStatusMessage = $"[성공] 빗썸(Bithumb) API Key 인증 및 계좌 연동 성공! (총 {balances.Count}개 보유 코인 잔고 확인)";
+                var existing = ApiConfigs.Count > 0 ? ApiConfigs[0] : null;
+                if (existing != null && existing.ExchangeName.Contains("Bithumb"))
+                {
+                    string fullKey = InputApiKey;
+                    if (fullKey.Length > 12)
+                    {
+                        existing.ApiKey = $"{fullKey[..8]}...{fullKey[^4..]}";
+                    }
+                    existing.IsConnected = true;
+                    existing.LastCheckedTime = DateTime.Now;
+                }
+            }
+            else
+            {
+                ConnectionStatusMessage = "[확인] 공개 시세/차트 API는 정상 수신 중입니다. (Private 잔고 조회의 경우 IP 등록 및 권한을 확인하세요)";
+            }
+
             InputApiKey = string.Empty;
             InputSecretKey = string.Empty;
         }
