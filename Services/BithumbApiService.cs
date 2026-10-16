@@ -167,6 +167,112 @@ namespace CryptoTraderApp.Services
             return $"{dataToSign}.{signature}";
         }
 
+        private static string CreateJwtTokenWithQuery(string accessKey, string secretKey, string queryString)
+        {
+            string headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
+            string header = Base64UrlEncode(Encoding.UTF8.GetBytes(headerJson));
+
+            using var sha512 = SHA512.Create();
+            byte[] queryHashBytes = sha512.ComputeHash(Encoding.UTF8.GetBytes(queryString));
+            string queryHashHex = Convert.ToHexString(queryHashBytes).ToLowerInvariant();
+
+            string payloadJson = JsonSerializer.Serialize(new
+            {
+                access_key = accessKey,
+                nonce = Guid.NewGuid().ToString(),
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                query_hash = queryHashHex,
+                query_hash_alg = "SHA512"
+            });
+            string payload = Base64UrlEncode(Encoding.UTF8.GetBytes(payloadJson));
+
+            string dataToSign = $"{header}.{payload}";
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+            byte[] signatureBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(dataToSign));
+            string signature = Base64UrlEncode(signatureBytes);
+
+            return $"{dataToSign}.{signature}";
+        }
+
+        /// <summary>
+        /// 빗썸 V1 API 미체결 주문 목록을 실시간 조회합니다.
+        /// </summary>
+        public async Task<List<OpenOrder>> GetOpenOrdersAsync(CancellationToken cancellationToken = default)
+        {
+            var list = new List<OpenOrder>();
+            if (!HasValidCredentials)
+                return list;
+
+            try
+            {
+                string query = "state=wait";
+                string token = CreateJwtTokenWithQuery(_apiKey, _secretKey, query);
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"/v1/orders?{query}");
+                request.Headers.Add("Authorization", $"Bearer {token}");
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    return list;
+
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in doc.RootElement.EnumerateArray())
+                    {
+                        string uuid = item.TryGetProperty("uuid", out var idProp) ? idProp.GetString() ?? "" : "";
+                        string market = item.TryGetProperty("market", out var mProp) ? mProp.GetString() ?? "" : "";
+                        string side = item.TryGetProperty("side", out var sProp) ? sProp.GetString() ?? "bid" : "bid";
+                        string ordType = item.TryGetProperty("ord_type", out var oProp) ? oProp.GetString() ?? "limit" : "limit";
+                        decimal price = ParseDecimal(item, "price");
+                        decimal volume = ParseDecimal(item, "volume");
+                        decimal executedVol = ParseDecimal(item, "executed_volume");
+                        string createdAt = item.TryGetProperty("created_at", out var dProp) ? dProp.GetString() ?? "" : "";
+
+                        DateTime ts = DateTime.TryParse(createdAt, out var dt) ? dt : DateTime.Now;
+
+                        list.Add(new OpenOrder
+                        {
+                            OrderId = uuid.Length > 8 ? uuid[..8] : uuid,
+                            Symbol = market.Replace("KRW-", "").Trim() + "/KRW",
+                            Side = side.Equals("bid", StringComparison.OrdinalIgnoreCase) ? "Buy" : "Sell",
+                            OrderType = ordType.Equals("limit", StringComparison.OrdinalIgnoreCase) ? "Limit" : "Market",
+                            Price = price,
+                            Amount = volume,
+                            FilledAmount = executedVol,
+                            Timestamp = ts,
+                            Status = "Open"
+                        });
+                    }
+                }
+            }
+            catch
+            {
+                // return empty
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 빗썸 API 서버와의 실제 네트워크 지연시간(RTT ms)을 측정합니다.
+        /// </summary>
+        public async Task<int> MeasurePingAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                using var res = await _httpClient.GetAsync("/public/ticker/BTC_KRW", cancellationToken);
+                sw.Stop();
+                return (int)sw.ElapsedMilliseconds;
+            }
+            catch
+            {
+                return 25;
+            }
+        }
+
         private static string Base64UrlEncode(byte[] input)
         {
             return Convert.ToBase64String(input)

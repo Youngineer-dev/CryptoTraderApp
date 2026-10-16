@@ -53,7 +53,7 @@ namespace CryptoTraderApp.Models
 
         public bool IsPositive => TotalProfit >= 0;
         public string StatusColor => IsRunning ? "#0ECB81" : "#848E9C";
-        public string FormattedProfit => $"{(TotalProfit >= 0 ? "+" : "")}{TotalProfit:N2} USDT ({(ProfitRate >= 0 ? "+" : "")}{ProfitRate:F2}%)";
+        public string FormattedProfit => $"{(TotalProfit >= 0 ? "+" : "")}{TotalProfit:N0} KRW ({(ProfitRate >= 0 ? "+" : "")}{ProfitRate:F2}%)";
     }
 
     public class AssetHolding

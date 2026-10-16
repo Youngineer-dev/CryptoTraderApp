@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CryptoTraderApp.Models;
@@ -11,88 +12,46 @@ namespace CryptoTraderApp.ViewModels
         private ObservableCollection<TradingBotStrategy> _botList = new();
 
         [ObservableProperty]
-        private string _newBotName = "BTC 무한 분할 그리드";
+        private string _newBotName = "빗썸 BTC 자동 그리드 봇 #1";
 
         [ObservableProperty]
-        private string _newBotSymbol = "BTC/USDT";
+        private string _newBotSymbol = "BTC/KRW";
 
         [ObservableProperty]
         private string _newStrategyType = "Grid Trading";
 
         [ObservableProperty]
-        private decimal _lowerPrice = 60000m;
+        private decimal _lowerPrice = 105000000m;
 
         [ObservableProperty]
-        private decimal _upperPrice = 75000m;
+        private decimal _upperPrice = 115000000m;
 
         [ObservableProperty]
-        private int _gridCount = 30;
+        private int _gridCount = 20;
 
         [ObservableProperty]
-        private decimal _investAmount = 2000m;
+        private decimal _investAmount = 1000000m; // 1,000,000 KRW
+
+        public int ActiveBotsCount => BotList.Count(b => b.IsRunning);
+        public int TotalBotsCount => BotList.Count;
+        public decimal TotalBotProfitKrw => BotList.Sum(b => b.TotalProfit);
+        public int TotalTradesCount => BotList.Sum(b => b.ExecutedTrades);
+        public decimal TotalBotCapitalKrw => BotList.Sum(b => b.AllocatedCapital);
 
         public BotManagementViewModel()
         {
-            InitializeBots();
+            // 실제 사용자가 직접 배포/설정한 봇만 관리하도록 초기화 (더미 예시 데이터 배제)
+            BotList = new ObservableCollection<TradingBotStrategy>();
+            NotifyStats();
         }
 
-        private void InitializeBots()
+        private void NotifyStats()
         {
-            BotList = new ObservableCollection<TradingBotStrategy>
-            {
-                new TradingBotStrategy
-                {
-                    Name = "BTC 무한 그리드봇 #1",
-                    Symbol = "BTC/USDT",
-                    StrategyType = "Grid Trading",
-                    IsRunning = true,
-                    AllocatedCapital = 5000.00m,
-                    TotalProfit = 428.50m,
-                    ProfitRate = 8.57,
-                    RuntimeHours = 142,
-                    ExecutedTrades = 86,
-                    LastSignal = "격자 매수 체결완료 (66,950 USDT)"
-                },
-                new TradingBotStrategy
-                {
-                    Name = "SOL 볼린저밴드 단타봇",
-                    Symbol = "SOL/USDT",
-                    StrategyType = "Bollinger Band",
-                    IsRunning = true,
-                    AllocatedCapital = 2500.00m,
-                    TotalProfit = 312.80m,
-                    ProfitRate = 12.51,
-                    RuntimeHours = 68,
-                    ExecutedTrades = 42,
-                    LastSignal = "밴드 하단 터치 매수 대기"
-                },
-                new TradingBotStrategy
-                {
-                    Name = "ETH RSI 모멘텀 돌파봇",
-                    Symbol = "ETH/USDT",
-                    StrategyType = "RSI Momentum",
-                    IsRunning = false,
-                    AllocatedCapital = 3000.00m,
-                    TotalProfit = 95.20m,
-                    ProfitRate = 3.17,
-                    RuntimeHours = 24,
-                    ExecutedTrades = 12,
-                    LastSignal = "RSI 과매도 대기 (일시정지됨)"
-                },
-                new TradingBotStrategy
-                {
-                    Name = "XRP 마틴게일 DCA 봇",
-                    Symbol = "XRP/USDT",
-                    StrategyType = "DCA Bot",
-                    IsRunning = true,
-                    AllocatedCapital = 1500.00m,
-                    TotalProfit = 118.40m,
-                    ProfitRate = 7.89,
-                    RuntimeHours = 96,
-                    ExecutedTrades = 31,
-                    LastSignal = "3단계 추가 매수 포지션 유지 중"
-                }
-            };
+            OnPropertyChanged(nameof(ActiveBotsCount));
+            OnPropertyChanged(nameof(TotalBotsCount));
+            OnPropertyChanged(nameof(TotalBotProfitKrw));
+            OnPropertyChanged(nameof(TotalTradesCount));
+            OnPropertyChanged(nameof(TotalBotCapitalKrw));
         }
 
         [RelayCommand]
@@ -109,9 +68,10 @@ namespace CryptoTraderApp.ViewModels
                 ProfitRate = 0,
                 RuntimeHours = 0,
                 ExecutedTrades = 0,
-                LastSignal = "전략 초기화 완료 및 첫 격자 배치"
+                LastSignal = $"빗썸 {NewBotSymbol} 호가 감시 및 첫 매수 주문 대기"
             };
             BotList.Insert(0, bot);
+            NotifyStats();
         }
 
         [RelayCommand]
@@ -125,6 +85,7 @@ namespace CryptoTraderApp.ViewModels
                 {
                     BotList[idx] = bot;
                 }
+                NotifyStats();
             }
         }
 
@@ -134,6 +95,7 @@ namespace CryptoTraderApp.ViewModels
             if (bot != null)
             {
                 BotList.Remove(bot);
+                NotifyStats();
             }
         }
     }

@@ -26,7 +26,7 @@ namespace CryptoTraderApp.ViewModels
         private decimal _totalProfitKrw = 0m;
 
         [ObservableProperty]
-        private double _dailyReturnPercent = 2.45;
+        private double _dailyReturnPercent = 0.0;
 
         [ObservableProperty]
         private string _accountStatusMessage = "빗썸 실제 계좌 잔고 연동 중...";
@@ -78,6 +78,7 @@ namespace CryptoTraderApp.ViewModels
 
                 var holdingList = new List<AssetHolding>();
                 decimal grandTotalKrw = 0m;
+                decimal totalPurchaseCost = 0m;
 
                 int colorIdx = 0;
                 foreach (var b in activeBalances)
@@ -103,6 +104,11 @@ namespace CryptoTraderApp.ViewModels
                     decimal val = Math.Round(b.TotalAmount * price, 2);
                     grandTotalKrw += val;
 
+                    if (b.AvgBuyPrice > 0 && !b.Currency.Equals("KRW", StringComparison.OrdinalIgnoreCase) && !b.Currency.Equals("P", StringComparison.OrdinalIgnoreCase))
+                    {
+                        totalPurchaseCost += b.TotalAmount * b.AvgBuyPrice;
+                    }
+
                     holdingList.Add(new AssetHolding
                     {
                         Symbol = b.Currency,
@@ -120,17 +126,28 @@ namespace CryptoTraderApp.ViewModels
                 holdingList = holdingList.OrderByDescending(x => x.ValueKrw).ToList();
 
                 // Compute allocation percentages
+                double weightedReturn = 0;
                 foreach (var item in holdingList)
                 {
                     item.AllocationPercentage = grandTotalKrw > 0 
                         ? (double)Math.Round((item.ValueKrw / grandTotalKrw) * 100, 2) 
                         : 0.0;
+
+                    if (tickers.FirstOrDefault(t => t.BaseCurrency.Equals(item.Symbol, StringComparison.OrdinalIgnoreCase)) is { } tick)
+                    {
+                        weightedReturn += tick.ChangePercentage * (item.AllocationPercentage / 100.0);
+                    }
                 }
+
+                decimal cryptoValuation = holdingList.Where(x => !x.Symbol.Equals("KRW", StringComparison.OrdinalIgnoreCase) && !x.Symbol.Equals("P", StringComparison.OrdinalIgnoreCase)).Sum(x => x.ValueKrw);
+                decimal profit = totalPurchaseCost > 0 ? (cryptoValuation - totalPurchaseCost) : 0m;
 
                 // Update UI on Dispatcher
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
                     TotalBalanceKrw = grandTotalKrw;
+                    TotalProfitKrw = profit;
+                    DailyReturnPercent = Math.Round(weightedReturn, 2);
                     AccountStatusMessage = $"[정상 연동] 빗썸 실시간 계좌 연동 완료 (총 {holdingList.Count}개 보유 코인 확인)";
 
                     Assets.Clear();
@@ -139,7 +156,7 @@ namespace CryptoTraderApp.ViewModels
                         Assets.Add(h);
                     }
 
-                    // Build Pie Chart Series (Top 6 assets + Others)
+                    // Build Pie Chart Series (Top 5 assets + Others)
                     var pieList = new List<ISeries>();
                     var topAssets = holdingList.Take(5).ToList();
                     var otherAssets = holdingList.Skip(5).ToList();

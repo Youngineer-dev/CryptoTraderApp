@@ -19,15 +19,15 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 1. Stats Summary Cards -->
+        <!-- 1. Stats Summary Cards (Bound to Real ViewModel Properties) -->
         <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,16">
             <!-- Card 1 -->
             <Border Style="{StaticResource TradingCardStyle}" Margin="0,0,12,0" Padding="14">
                 <StackPanel>
                     <TextBlock Text="가동 중인 봇" FontSize="12" Foreground="#848E9C"/>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="3" FontSize="26" FontWeight="Bold" Foreground="#0ECB81"/>
-                        <TextBlock Text=" / 4 총 등록" FontSize="13" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
+                        <TextBlock Text="{Binding ActiveBotsCount}" FontSize="26" FontWeight="Bold" Foreground="#0ECB81"/>
+                        <TextBlock Text="{Binding TotalBotsCount, StringFormat='{} / {0} 총 등록'}" FontSize="13" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -37,8 +37,8 @@
                 <StackPanel>
                     <TextBlock Text="자동매매 누적 수익" FontSize="12" Foreground="#848E9C"/>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="+954.90" FontSize="26" FontWeight="Bold" Foreground="#0ECB81"/>
-                        <TextBlock Text=" USDT (+8.4%)" FontSize="13" Foreground="#0ECB81" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
+                        <TextBlock Text="{Binding TotalBotProfitKrw, StringFormat='{}{0:N0}'}" FontSize="26" FontWeight="Bold" Foreground="#0ECB81"/>
+                        <TextBlock Text=" KRW" FontSize="13" Foreground="#0ECB81" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -48,7 +48,7 @@
                 <StackPanel>
                     <TextBlock Text="총 자동 체결 횟수" FontSize="12" Foreground="#848E9C"/>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="171" FontSize="26" FontWeight="Bold" Foreground="#EAECEF"/>
+                        <TextBlock Text="{Binding TotalTradesCount}" FontSize="26" FontWeight="Bold" Foreground="#EAECEF"/>
                         <TextBlock Text=" 회 완료" FontSize="13" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
                     </StackPanel>
                 </StackPanel>
@@ -59,8 +59,8 @@
                 <StackPanel>
                     <TextBlock Text="자동 봇 운용 자금" FontSize="12" Foreground="#848E9C"/>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="12,000" FontSize="26" FontWeight="Bold" Foreground="#F0B90B"/>
-                        <TextBlock Text=" USDT (24.8%)" FontSize="13" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
+                        <TextBlock Text="{Binding TotalBotCapitalKrw, StringFormat='{}{0:N0}'}" FontSize="26" FontWeight="Bold" Foreground="#F0B90B"/>
+                        <TextBlock Text=" KRW" FontSize="13" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -79,7 +79,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                             <ui:SymbolIcon Symbol="Bot24" FontSize="20" Foreground="#0ECB81" Margin="0,0,8,0"/>
-                            <TextBlock Text="새 자동 매매 봇 배포" FontSize="16" FontWeight="Bold" Foreground="#EAECEF"/>
+                            <TextBlock Text="새 빗썸 자동 매매 봇 배포" FontSize="16" FontWeight="Bold" Foreground="#EAECEF"/>
                         </StackPanel>
 
                         <!-- Bot Name -->
@@ -87,12 +87,13 @@
                         <TextBox Text="{Binding NewBotName}" Height="34" FontSize="13" Margin="0,0,0,12" Background="#1E2329" Foreground="#EAECEF" BorderBrush="#2B313A"/>
 
                         <!-- Target Symbol -->
-                        <TextBlock Text="대상 코인 (심볼)" FontSize="12" Foreground="#848E9C" Margin="0,0,0,4"/>
+                        <TextBlock Text="대상 코인 (빗썸 KRW 마켓)" FontSize="12" Foreground="#848E9C" Margin="0,0,0,4"/>
                         <ComboBox SelectedValue="{Binding NewBotSymbol}" SelectedValuePath="Content" Height="34" FontSize="13" Margin="0,0,0,12">
-                            <ComboBoxItem Content="BTC/USDT" IsSelected="True"/>
-                            <ComboBoxItem Content="ETH/USDT"/>
-                            <ComboBoxItem Content="SOL/USDT"/>
-                            <ComboBoxItem Content="XRP/USDT"/>
+                            <ComboBoxItem Content="BTC/KRW" IsSelected="True"/>
+                            <ComboBoxItem Content="ETH/KRW"/>
+                            <ComboBoxItem Content="SOL/KRW"/>
+                            <ComboBoxItem Content="XRP/KRW"/>
+                            <ComboBoxItem Content="DOGE/KRW"/>
                         </ComboBox>
 
                         <!-- Strategy Type -->
@@ -107,7 +108,7 @@
                         <!-- Strategy Parameters -->
                         <Border Background="#1E2329" CornerRadius="6" Padding="12" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="그리드 상세 파라미터" FontSize="12" FontWeight="SemiBold" Foreground="#F0B90B" Margin="0,0,0,8"/>
+                                <TextBlock Text="그리드 상세 파라미터 (KRW)" FontSize="12" FontWeight="SemiBold" Foreground="#F0B90B" Margin="0,0,0,8"/>
                                 
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
@@ -115,12 +116,12 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                        <TextBlock Text="격자 하한가" FontSize="11" Foreground="#848E9C"/>
-                                        <hc:NumericUpDown Value="{Binding LowerPrice}" DecimalPlaces="0" Increment="500" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
+                                        <TextBlock Text="격자 하한가 (KRW)" FontSize="11" Foreground="#848E9C"/>
+                                        <hc:NumericUpDown Value="{Binding LowerPrice}" DecimalPlaces="0" Increment="500000" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                        <TextBlock Text="격자 상한가" FontSize="11" Foreground="#848E9C"/>
-                                        <hc:NumericUpDown Value="{Binding UpperPrice}" DecimalPlaces="0" Increment="500" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
+                                        <TextBlock Text="격자 상한가 (KRW)" FontSize="11" Foreground="#848E9C"/>
+                                        <hc:NumericUpDown Value="{Binding UpperPrice}" DecimalPlaces="0" Increment="500000" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -134,8 +135,8 @@
                                         <hc:NumericUpDown Value="{Binding GridCount}" Minimum="2" Maximum="150" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                        <TextBlock Text="투자 배분금 (USDT)" FontSize="11" Foreground="#848E9C"/>
-                                        <hc:NumericUpDown Value="{Binding InvestAmount}" DecimalPlaces="0" Increment="100" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
+                                        <TextBlock Text="투자 배분금 (KRW)" FontSize="11" Foreground="#848E9C"/>
+                                        <hc:NumericUpDown Value="{Binding InvestAmount}" DecimalPlaces="0" Increment="100000" Height="30" FontSize="12" Background="#121418" Foreground="#EAECEF"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -164,8 +165,29 @@
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                         <TextBlock Text="등록된 자동 매매 봇 목록" FontSize="16" FontWeight="Bold" Foreground="#EAECEF"/>
-                        <TextBlock Text="실시간 자동 주문 및 텔레그램 연동 시그널" FontSize="12" Foreground="#848E9C" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <TextBlock Text="실시간 빗썸 호가 연동 및 자동 주문 실행" FontSize="12" Foreground="#848E9C" VerticalAlignment="Center" Margin="10,0,0,0"/>
                     </StackPanel>
+
+                    <!-- Empty Placeholder when no bots -->
+                    <Border Grid.Row="1" Background="#1E2329" CornerRadius="8" Padding="24"
+                            VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding BotList.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Bot24" FontSize="36" Foreground="#848E9C" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                            <TextBlock Text="현재 가동 중인 자동 매매 봇이 없습니다." FontWeight="Bold" FontSize="15" Foreground="#EAECEF" HorizontalAlignment="Center"/>
+                            <TextBlock Text="왼쪽 패널에서 원하는 코인과 그리드/지표 전략 파라미터를 설정한 후 [전략 가동 및 즉시 배포]를 눌러 봇을 등록하세요." 
+                                       FontSize="12" Foreground="#848E9C" Margin="0,6,0,0" HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Bot Cards / Grid -->
                     <ItemsControl Grid.Row="1" ItemsSource="{Binding BotList}">
@@ -206,7 +228,7 @@
                                         <!-- Profit & Runtime -->
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,24,0">
                                             <TextBlock Text="{Binding FormattedProfit}" FontSize="14" FontWeight="Bold" Foreground="#0ECB81" HorizontalAlignment="Right"/>
-                                            <TextBlock Text="{Binding RuntimeHours, StringFormat='{}가동: {0}시간 / 투자금: {1:N0} USDT'}" FontSize="11" Foreground="#848E9C" HorizontalAlignment="Right"/>
+                                            <TextBlock Text="{Binding RuntimeHours, StringFormat='{}가동: {0}시간 / 투자금: {1:N0} KRW'}" FontSize="11" Foreground="#848E9C" HorizontalAlignment="Right"/>
                                         </StackPanel>
 
                                         <!-- Control Toggle & Delete -->

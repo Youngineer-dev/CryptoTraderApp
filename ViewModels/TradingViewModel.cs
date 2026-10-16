@@ -99,7 +99,7 @@ namespace CryptoTraderApp.ViewModels
         private decimal _stopLossPrice;
 
         [ObservableProperty]
-        private decimal _availableBalance = 35000000m; // 35,000,000 KRW
+        private decimal _availableBalance = 0m;
 
         public static double Create25 => 25.0;
         public static double Create50 => 50.0;
@@ -114,7 +114,6 @@ namespace CryptoTraderApp.ViewModels
         public TradingViewModel()
         {
             InitializeDefaultMarkets();
-            InitializeDefaultPositionsAndOrders();
             InitializeBots();
             SetupAxes();
 
@@ -208,6 +207,9 @@ namespace CryptoTraderApp.ViewModels
 
                 // 2. Load chart, orderbook, trades for selected market
                 await RefreshSelectedMarketDataAsync();
+
+                // 3. Load real account positions, open orders & KRW balance
+                await LoadRealPositionsAndOrdersAsync(liveTickers);
 
                 _refreshTimer.Start();
             }
@@ -466,86 +468,61 @@ namespace CryptoTraderApp.ViewModels
             OnPropertyChanged(nameof(CandleSeries));
         }
 
-        private void InitializeDefaultPositionsAndOrders()
+        private async Task LoadRealPositionsAndOrdersAsync(List<MarketTicker> tickers)
         {
-            Positions = new ObservableCollection<PositionModel>
+            try
             {
-                new PositionModel
+                // 1. Load real KRW balance & crypto positions
+                var balances = await _bithumbService.GetAccountBalancesAsync();
+                var krw = balances.FirstOrDefault(b => b.Currency.Equals("KRW", StringComparison.OrdinalIgnoreCase));
+                if (krw != null)
                 {
-                    Symbol = "BTC/KRW",
-                    Side = "Long",
-                    Leverage = 1,
-                    Size = 0.15m,
-                    EntryPrice = 108500000m,
-                    MarkPrice = 110400000m,
-                    LiquidationPrice = 0m,
-                    Margin = 16275000m,
-                    PnL = 285000m,
-                    RoePercentage = 1.75
-                },
-                new PositionModel
-                {
-                    Symbol = "ETH/KRW",
-                    Side = "Long",
-                    Leverage = 1,
-                    Size = 2.5m,
-                    EntryPrice = 3200000m,
-                    MarkPrice = 3310000m,
-                    LiquidationPrice = 0m,
-                    Margin = 8000000m,
-                    PnL = 275000m,
-                    RoePercentage = 3.44
+                    AvailableBalance = krw.Balance;
                 }
-            };
 
-            OpenOrders = new ObservableCollection<OpenOrder>
-            {
-                new OpenOrder
+                var tickerMap = tickers.ToDictionary(t => t.BaseCurrency, t => t.LastPrice, StringComparer.OrdinalIgnoreCase);
+                var posList = new List<PositionModel>();
+
+                foreach (var b in balances.Where(x => x.TotalAmount > 0 && !x.Currency.Equals("KRW", StringComparison.OrdinalIgnoreCase) && !x.Currency.Equals("P", StringComparison.OrdinalIgnoreCase)))
                 {
-                    OrderId = "BTH-81920",
-                    Symbol = "BTC/KRW",
-                    Side = "Buy",
-                    OrderType = "Limit",
-                    Price = 109500000m,
-                    Amount = 0.05m,
-                    FilledAmount = 0.0m,
-                    Timestamp = DateTime.Now.AddMinutes(-20),
-                    Status = "Open"
+                    decimal markPrice = tickerMap.TryGetValue(b.Currency, out var p) ? p : b.AvgBuyPrice;
+                    decimal pnl = b.AvgBuyPrice > 0 ? (markPrice - b.AvgBuyPrice) * b.TotalAmount : 0m;
+                    double roe = b.AvgBuyPrice > 0 ? (double)((markPrice - b.AvgBuyPrice) / b.AvgBuyPrice * 100) : 0.0;
+
+                    posList.Add(new PositionModel
+                    {
+                        Symbol = $"{b.Currency}/KRW",
+                        Side = "Long",
+                        Leverage = 1,
+                        Size = b.TotalAmount,
+                        EntryPrice = b.AvgBuyPrice,
+                        MarkPrice = markPrice,
+                        LiquidationPrice = 0m,
+                        Margin = b.TotalAmount * b.AvgBuyPrice,
+                        PnL = pnl,
+                        RoePercentage = roe
+                    });
                 }
-            };
+
+                // 2. Load real open orders from Bithumb
+                var openOrdersList = await _bithumbService.GetOpenOrdersAsync();
+
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    Positions = new ObservableCollection<PositionModel>(posList);
+                    OpenOrders = new ObservableCollection<OpenOrder>(openOrdersList);
+                });
+            }
+            catch
+            {
+                // Suppress background errors
+            }
         }
 
         private void InitializeBots()
         {
-            ActiveBots = new ObservableCollection<TradingBotStrategy>
-            {
-                new TradingBotStrategy
-                {
-                    Name = "빗썸 BTC 그리드 분할매매 #1",
-                    Symbol = "BTC/KRW",
-                    StrategyType = "Grid Trading",
-                    IsRunning = true,
-                    AllocatedCapital = 10000000m,
-                    TotalProfit = 345000m,
-                    ProfitRate = 3.45,
-                    RuntimeHours = 96,
-                    ExecutedTrades = 48,
-                    LastSignal = "빗썸 호가 110,100,000 KRW 매수 대기"
-                },
-                new TradingBotStrategy
-                {
-                    Name = "빗썸 ETH 볼린저 하단반등봇",
-                    Symbol = "ETH/KRW",
-                    StrategyType = "Bollinger Band",
-                    IsRunning = true,
-                    AllocatedCapital = 5000000m,
-                    TotalProfit = 185000m,
-                    ProfitRate = 3.70,
-                    RuntimeHours = 44,
-                    ExecutedTrades = 22,
-                    LastSignal = "BB(20) 하단 터치 감시 중"
-                }
-            };
+            // 실제 가동 중인 봇 목록 (초기에는 실등록된 봇만 관리)
+            ActiveBots = new ObservableCollection<TradingBotStrategy>();
         }
 
         [RelayCommand]
