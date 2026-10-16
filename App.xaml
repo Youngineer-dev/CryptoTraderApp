@@ -1,0 +1,48 @@
+<Application x:Class="CryptoTraderApp.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:hc="https://handyorg.github.io/langs/wpf"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- WPF-UI v4 Modern Fluent Themes -->
+                <ui:ThemesDictionary Theme="Dark" />
+                <ui:ControlsDictionary />
+
+                <!-- HandyControl Themes -->
+                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/SkinDefault.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Custom Trading Colors -->
+            <SolidColorBrush x:Key="TradingBuyGreenBrush" Color="#0ECB81" />
+            <SolidColorBrush x:Key="TradingBuyGreenBgBrush" Color="#16382E" />
+            <SolidColorBrush x:Key="TradingSellRedBrush" Color="#F6465D" />
+            <SolidColorBrush x:Key="TradingSellRedBgBrush" Color="#3B2228" />
+            <SolidColorBrush x:Key="TerminalDarkBgBrush" Color="#121418" />
+            <SolidColorBrush x:Key="PanelDarkBgBrush" Color="#181A20" />
+            <SolidColorBrush x:Key="CardDarkBgBrush" Color="#1E2329" />
+            <SolidColorBrush x:Key="BorderDarkBrush" Color="#2B313A" />
+            <SolidColorBrush x:Key="TextMutedBrush" Color="#848E9C" />
+            <SolidColorBrush x:Key="AccentGoldBrush" Color="#F0B90B" />
+
+            <!-- Card Style for Trading Panels -->
+            <Style x:Key="TradingCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="#181A20" />
+                <Setter Property="BorderBrush" Value="#2B313A" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="12" />
+            </Style>
+
+            <Style x:Key="PanelHeaderTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="#EAECEF" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

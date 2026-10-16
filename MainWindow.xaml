@@ -1,0 +1,193 @@
+<ui:FluentWindow x:Class="CryptoTraderApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:hc="https://handyorg.github.io/langs/wpf"
+        xmlns:vm="clr-namespace:CryptoTraderApp.ViewModels"
+        xmlns:views="clr-namespace:CryptoTraderApp.Views"
+        mc:Ignorable="d"
+        Title="QuantumTrader Pro - 실시간 거래소 자동 및 수동 매매 터미널" 
+        Height="900" Width="1440"
+        MinHeight="720" MinWidth="1100"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica"
+        WindowCornerPreference="Round"
+        WindowStartupLocation="CenterScreen"
+        Background="#121418"
+        Foreground="#EAECEF">
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:TradingViewModel}">
+            <views:TradingView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BotManagementViewModel}">
+            <views:BotManagementView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PortfolioViewModel}">
+            <views:PortfolioView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ApiSettingsViewModel}">
+            <views:ApiSettingsView />
+        </DataTemplate>
+
+        <!-- Sidebar Navigation Button Style -->
+        <Style x:Key="NavRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Margin" Value="6,3"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" CornerRadius="8" Background="Transparent" Padding="12,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ContentPresenter ContentSource="Content" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E2329"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2B313A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- TitleBar & Global Status -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main Content Area with Sidebar -->
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. Custom TitleBar with System Status Bar -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- App Logo & Title in TitleBar -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,8,20,8">
+                <Border Width="26" Height="26" CornerRadius="6" Background="#F0B90B" Margin="0,0,10,0">
+                    <ui:SymbolIcon Symbol="ArrowTrendingLines24" Foreground="#121418" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="QuantumTrader" FontWeight="Bold" FontSize="14" Foreground="#EAECEF" VerticalAlignment="Center"/>
+                <TextBlock Text="PRO" FontWeight="Bold" FontSize="11" Foreground="#0ECB81" Margin="4,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Global Status Center -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Connected Exchange Badge -->
+                <Border Background="#16382E" CornerRadius="4" Padding="8,3" Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="6" Height="6" CornerRadius="3" Background="#0ECB81" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ConnectedExchangeName}" Foreground="#0ECB81" FontSize="11" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Ping Latency -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Ping: " Foreground="#848E9C" FontSize="11"/>
+                    <TextBlock Text="{Binding NetworkPing, StringFormat='{}{0}ms'}" Foreground="#0ECB81" FontSize="11" FontWeight="Bold"/>
+                </StackPanel>
+
+                <!-- Server Time -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Server: " Foreground="#848E9C" FontSize="11"/>
+                    <TextBlock Text="{Binding ServerTime}" Foreground="#848E9C" FontSize="11"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Native Fluent TitleBar controls (Minimize, Maximize, Close) -->
+            <ui:TitleBar Grid.Column="2" VerticalAlignment="Top" Height="40"/>
+        </Grid>
+
+        <!-- 2. Main Workspace: Left Sidebar + Center View Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar Navigation -->
+            <Border Grid.Column="0" Background="#181A20" BorderBrush="#2B313A" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="6,12">
+                        <TextBlock Text="MAIN TERMINAL" FontSize="11" FontWeight="Bold" Foreground="#848E9C" Margin="14,4,0,10"/>
+
+                        <!-- Navigation Item 1: Trading Workstation -->
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}" IsChecked="True"
+                                     Command="{Binding NavigateCommand}" CommandParameter="Trading">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowTrendingLines24" FontSize="18" Foreground="#0ECB81" Margin="0,0,12,0"/>
+                                <TextBlock Text="트레이딩 터미널" FontSize="13" FontWeight="SemiBold" Foreground="#EAECEF" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Navigation Item 2: Trading Bots -->
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     Command="{Binding NavigateCommand}" CommandParameter="Bot">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Bot24" FontSize="18" Foreground="#F0B90B" Margin="0,0,12,0"/>
+                                <TextBlock Text="자동 매매 봇 전략" FontSize="13" FontWeight="SemiBold" Foreground="#EAECEF" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Navigation Item 3: Portfolio -->
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     Command="{Binding NavigateCommand}" CommandParameter="Portfolio">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="DataPie24" FontSize="18" Foreground="#3861FB" Margin="0,0,12,0"/>
+                                <TextBlock Text="자산 포트폴리오" FontSize="13" FontWeight="SemiBold" Foreground="#EAECEF" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <Border Height="1" Background="#2B313A" Margin="8,16"/>
+                        <TextBlock Text="SYSTEM &amp; SECURITY" FontSize="11" FontWeight="Bold" Foreground="#848E9C" Margin="14,4,0,10"/>
+
+                        <!-- Navigation Item 4: API Settings -->
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     Command="{Binding NavigateCommand}" CommandParameter="Settings">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Key24" FontSize="18" Foreground="#EAECEF" Margin="0,0,12,0"/>
+                                <TextBlock Text="거래소 API 설정" FontSize="13" FontWeight="SemiBold" Foreground="#EAECEF" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+
+                    <!-- Sidebar Footer: Quick Security Status -->
+                    <Border Grid.Row="1" Background="#121418" Padding="12" Margin="10" CornerRadius="8">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <ui:SymbolIcon Symbol="ShieldCheckmark24" FontSize="16" Foreground="#0ECB81" Margin="0,0,6,0"/>
+                                <TextBlock Text="보안 격리 보호 활성" FontSize="11" FontWeight="Bold" Foreground="#0ECB81"/>
+                            </StackPanel>
+                            <TextBlock Text="로컬 DPAPI 키보호 &amp; 서명 엔진" FontSize="10" Foreground="#848E9C"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Center Content View Area -->
+            <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Focusable="False"/>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

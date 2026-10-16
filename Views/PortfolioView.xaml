@@ -1,0 +1,149 @@
+<UserControl x:Class="CryptoTraderApp.Views.PortfolioView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:hc="https://handyorg.github.io/langs/wpf"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:vm="clr-namespace:CryptoTraderApp.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance vm:PortfolioViewModel}"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="#121418">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <!-- Top Balance Banner -->
+            <RowDefinition Height="Auto"/>
+            <!-- Bottom Chart & Asset Table -->
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. Top Balance Banner -->
+        <Border Grid.Row="0" Style="{StaticResource TradingCardStyle}" Margin="0,0,0,16" Padding="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Total Balance -->
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="총 보유 평가 자산" FontSize="13" Foreground="#848E9C"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding TotalBalanceUsdt, StringFormat='{}{0:N2}'}" FontSize="28" FontWeight="Bold" Foreground="#EAECEF"/>
+                        <TextBlock Text=" USDT" FontSize="16" Foreground="#848E9C" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
+                    </StackPanel>
+                    <TextBlock Text="≈ 약 66,586,000 KRW" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Total PnL -->
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="누적 평가 손익 (PnL)" FontSize="13" Foreground="#848E9C"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="+3,420.50" FontSize="28" FontWeight="Bold" Foreground="#0ECB81"/>
+                        <TextBlock Text=" USDT" FontSize="16" Foreground="#0ECB81" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
+                    </StackPanel>
+                    <TextBlock Text="수익률 +7.62%" FontSize="12" Foreground="#0ECB81" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Daily Return -->
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="24시간 수익률" FontSize="13" Foreground="#848E9C"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="+4.25%" FontSize="28" FontWeight="Bold" Foreground="#0ECB81"/>
+                    </StackPanel>
+                    <TextBlock Text="전일 대비 자산 증가 추세" FontSize="12" Foreground="#848E9C" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. Bottom: Chart (Left) + Asset Table (Right) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="420"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Donut Chart -->
+            <Border Grid.Column="0" Style="{StaticResource TradingCardStyle}" Margin="0,0,16,0" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="자산 포트폴리오 비중" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,12"/>
+
+                    <!-- LiveCharts2 PieChart -->
+                    <lvc:PieChart Grid.Row="1" 
+                                  Series="{Binding AssetPieSeries}"
+                                  InitialRotation="45"
+                                  MaxAngle="360"
+                                  MinValue="0" />
+                </Grid>
+            </Border>
+
+            <!-- Right: Assets Detail Table -->
+            <Border Grid.Column="1" Style="{StaticResource TradingCardStyle}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="보유 자산 상세 목록" FontSize="15" FontWeight="Bold" Foreground="#EAECEF" Margin="0,0,0,12"/>
+
+                    <DataGrid Grid.Row="1" 
+                              ItemsSource="{Binding Assets}"
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              RowBackground="#181A20"
+                              AlternatingRowBackground="#1E2329"
+                              Foreground="#EAECEF"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#2B313A"
+                              HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="코인" Width="140">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding IconColor}" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{Binding Symbol}" FontWeight="Bold" FontSize="13" Foreground="#EAECEF" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="11" Foreground="#848E9C" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="총 보유량" Binding="{Binding Balance, StringFormat='{}{0:F4}'}" Width="110"/>
+                            <DataGridTextColumn Header="주문 가능 수량" Binding="{Binding Available, StringFormat='{}{0:F4}'}" Width="120"/>
+                            <DataGridTextColumn Header="평가 금액 (USDT)" Binding="{Binding ValueUsdt, StringFormat='{}{0:N2}'}" Width="130"/>
+
+                            <DataGridTemplateColumn Header="포트폴리오 비중" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="50"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ProgressBar Value="{Binding AllocationPercentage}" Maximum="100" Height="6" Background="#2B313A" Foreground="{Binding IconColor}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding AllocationPercentage, StringFormat='{}{0:F1}%'}" 
+                                                       FontSize="11" Foreground="#848E9C" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
